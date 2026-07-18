@@ -5,12 +5,20 @@ import { getClients } from '../../clients/api/clientsApi'
 import { ClientForm } from '../../clients/components/ClientForm'
 import { ClientList } from '../../clients/components/ClientList'
 import type { Client } from '../../clients/types/client'
-import { getContract, getContracts } from '../api/contractsApi'
+import {
+  getContract,
+  getContracts,
+  getContractSummary,
+} from '../api/contractsApi'
 import { CreateContractModal } from '../components/CreateContractModal'
 import { DeleteContractModal } from '../components/DeleteContractModal'
 import { EditContractModal } from '../components/EditContractModal'
 import { ContractList } from '../components/ContractList'
-import type { Contract } from '../types/contract'
+import { ContractSummary } from '../components/ContractSummary'
+import type {
+  Contract,
+  ContractSummary as ContractSummaryData,
+} from '../types/contract'
 
 export function ContractsPage() {
   const { logout } = useAuth()
@@ -26,23 +34,38 @@ export function ContractsPage() {
   const [contracts, setContracts] = useState<Contract[]>([])
   const [isLoadingContracts, setIsLoadingContracts] = useState(true)
   const [contractsError, setContractsError] = useState('')
+  const [summary, setSummary] = useState<ContractSummaryData | null>(null)
+  const [isLoadingSummary, setIsLoadingSummary] = useState(true)
+  const [summaryError, setSummaryError] = useState('')
   const [routeContract, setRouteContract] = useState<Contract | null>(null)
   const [routeError, setRouteError] = useState<{
     contractId: string
     message: string
   } | null>(null)
 
-  async function loadContracts() {
-    setIsLoadingContracts(true)
-    setContractsError('')
+  function fetchContracts() {
+    return getContracts()
+      .then(setContracts)
+      .catch(() =>
+        setContractsError('Não foi possível carregar os contratos.'),
+      )
+      .finally(() => setIsLoadingContracts(false))
+  }
 
-    try {
-      setContracts(await getContracts())
-    } catch {
-      setContractsError('Não foi possível carregar os contratos.')
-    } finally {
-      setIsLoadingContracts(false)
-    }
+  function fetchSummary() {
+    return getContractSummary()
+      .then((data) => setSummary(data ?? null))
+      .catch(() => setSummaryError('Não foi possível carregar o resumo.'))
+      .finally(() => setIsLoadingSummary(false))
+  }
+
+  async function loadContractsAndSummary() {
+    setIsLoadingContracts(true)
+    setIsLoadingSummary(true)
+    setContractsError('')
+    setSummaryError('')
+
+    await Promise.all([fetchContracts(), fetchSummary()])
   }
 
   useEffect(() => {
@@ -51,12 +74,8 @@ export function ContractsPage() {
       .catch(() => setClientsError('Não foi possível carregar os clientes.'))
       .finally(() => setIsLoadingClients(false))
 
-    getContracts()
-      .then(setContracts)
-      .catch(() =>
-        setContractsError('Não foi possível carregar os contratos.'),
-      )
-      .finally(() => setIsLoadingContracts(false))
+    void fetchContracts()
+    void fetchSummary()
   }, [])
 
   useEffect(() => {
@@ -114,6 +133,15 @@ export function ContractsPage() {
         </div>
       </section>
 
+      <section className="content-section" aria-labelledby="summary-title">
+        <h2 id="summary-title">Resumo</h2>
+        <ContractSummary
+          summary={summary}
+          isLoading={isLoadingSummary}
+          errorMessage={summaryError}
+        />
+      </section>
+
       <section className="content-section" aria-labelledby="contracts-title">
         <div className="section-header">
           <h2 id="contracts-title">Contratos</h2>
@@ -128,10 +156,12 @@ export function ContractsPage() {
             <button
               type="button"
               className="secondary-button"
-              onClick={() => void loadContracts()}
-              disabled={isLoadingContracts}
+              onClick={() => void loadContractsAndSummary()}
+              disabled={isLoadingContracts || isLoadingSummary}
             >
-              {isLoadingContracts ? 'Atualizando...' : 'Atualizar'}
+              {isLoadingContracts || isLoadingSummary
+                ? 'Atualizando...'
+                : 'Atualizar'}
             </button>
           </div>
         </div>
@@ -152,7 +182,7 @@ export function ContractsPage() {
               onDelete={(contract) =>
                 navigate(`/contracts/${contract.id}/delete`)
               }
-              onChanged={loadContracts}
+              onChanged={loadContractsAndSummary}
             />
           </div>
         </div>
@@ -160,7 +190,7 @@ export function ContractsPage() {
       {createRoute && (
         <CreateContractModal
           clients={clients}
-          onCreated={loadContracts}
+          onCreated={loadContractsAndSummary}
           onClose={() => navigate('/contracts')}
         />
       )}
@@ -168,14 +198,14 @@ export function ContractsPage() {
         <EditContractModal
           clients={clients}
           contract={routeContract}
-          onUpdated={loadContracts}
+          onUpdated={loadContractsAndSummary}
           onClose={() => navigate('/contracts')}
         />
       )}
       {deleteContractId && routeContract?.id === deleteContractId && (
         <DeleteContractModal
           contract={routeContract}
-          onDeleted={loadContracts}
+          onDeleted={loadContractsAndSummary}
           onClose={() => navigate('/contracts')}
         />
       )}

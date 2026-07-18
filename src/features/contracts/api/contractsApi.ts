@@ -1,12 +1,17 @@
 import { apiRequest } from '../../../lib/api-client'
 import type {
   Contract,
+  ContractSummary,
   CreateContractInput,
   UpdateContractInput,
 } from '../types/contract'
 
 export async function getContracts() {
   return (await apiRequest<Contract[]>('/contracts')) ?? []
+}
+
+export async function getContractSummary() {
+  return apiRequest<ContractSummary>('/contracts/summary')
 }
 
 export async function createContract(input: CreateContractInput) {

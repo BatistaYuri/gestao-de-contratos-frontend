@@ -19,3 +19,10 @@ export interface CreateContractInput {
 }
 
 export type UpdateContractInput = CreateContractInput
+
+export interface ContractSummary {
+  active: number
+  expired: number
+  closed: number
+  total: number
+}
