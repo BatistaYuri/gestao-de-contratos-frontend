@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useState } from 'react'
 import { configureApiAuth } from '../../../lib/api-client'
 import { login as requestLogin } from '../api/login'
 import type { LoginCredentials } from '../types/auth'
@@ -19,7 +19,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticated(false)
   }, [])
 
-  configureApiAuth({ getToken: getAuthToken, onUnauthorized: logout })
+  useEffect(() => {
+    configureApiAuth({ getToken: getAuthToken, onUnauthorized: logout })
+  }, [logout])
 
   async function login(credentials: LoginCredentials) {
     const nextToken = await requestLogin(credentials)

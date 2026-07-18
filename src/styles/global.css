@@ -36,7 +36,7 @@ button:disabled {
 }
 
 .app-shell {
-  width: min(42rem, calc(100% - 2rem));
+  width: min(68rem, calc(100% - 2rem));
   margin: 4rem auto;
   padding: 2rem;
   border: 1px solid #dce1e8;
@@ -47,6 +47,91 @@ button:disabled {
 
 h1 {
   margin-top: 0;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.content-section h2,
+.content-section h3 {
+  margin-top: 0;
+}
+
+.secondary-button {
+  color: #172033;
+  background: #ffffff;
+  border: 1px solid #aeb7c4;
+}
+
+.content-section {
+  margin-top: 1.25rem;
+  padding: 1.5rem;
+  border: 1px solid #dce1e8;
+  border-radius: 0.5rem;
+}
+
+.content-section > p:last-child {
+  margin-bottom: 0;
+}
+
+.clients-layout {
+  display: grid;
+  grid-template-columns: minmax(15rem, 0.8fr) minmax(20rem, 1.2fr);
+  gap: 2rem;
+}
+
+.client-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.form-field {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.form-field input {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #aeb7c4;
+  border-radius: 0.375rem;
+}
+
+.form-message {
+  margin: 0;
+}
+
+.form-message.error {
+  color: #9b2c2c;
+}
+
+.form-message.success {
+  color: #176b43;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #dce1e8;
+  text-align: left;
+}
+
+th {
+  color: #52606d;
+  font-size: 0.875rem;
 }
 
 .auth-page {
@@ -85,4 +170,14 @@ h1 {
 .form-error {
   margin: 0;
   color: #9b2c2c;
+}
+
+@media (max-width: 45rem) {
+  .app-header {
+    align-items: flex-start;
+  }
+
+  .clients-layout {
+    grid-template-columns: 1fr;
+  }
 }
