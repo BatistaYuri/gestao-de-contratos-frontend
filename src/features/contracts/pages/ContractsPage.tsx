@@ -1,22 +1,36 @@
 import { useEffect, useState } from 'react'
+import { useMatch, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/context/useAuth'
 import { getClients } from '../../clients/api/clientsApi'
 import { ClientForm } from '../../clients/components/ClientForm'
 import { ClientList } from '../../clients/components/ClientList'
 import type { Client } from '../../clients/types/client'
-import { getContracts } from '../api/contractsApi'
-import { ContractForm } from '../components/ContractForm'
+import { getContract, getContracts } from '../api/contractsApi'
+import { CreateContractModal } from '../components/CreateContractModal'
+import { DeleteContractModal } from '../components/DeleteContractModal'
+import { EditContractModal } from '../components/EditContractModal'
 import { ContractList } from '../components/ContractList'
 import type { Contract } from '../types/contract'
 
 export function ContractsPage() {
   const { logout } = useAuth()
+  const navigate = useNavigate()
+  const createRoute = useMatch('/contracts/add')
+  const editRoute = useMatch('/contracts/:id/edit')
+  const deleteRoute = useMatch('/contracts/:id/delete')
+  const editContractId = editRoute?.params.id
+  const deleteContractId = deleteRoute?.params.id
   const [clients, setClients] = useState<Client[]>([])
   const [isLoadingClients, setIsLoadingClients] = useState(true)
   const [clientsError, setClientsError] = useState('')
   const [contracts, setContracts] = useState<Contract[]>([])
   const [isLoadingContracts, setIsLoadingContracts] = useState(true)
   const [contractsError, setContractsError] = useState('')
+  const [routeContract, setRouteContract] = useState<Contract | null>(null)
+  const [routeError, setRouteError] = useState<{
+    contractId: string
+    message: string
+  } | null>(null)
 
   async function loadContracts() {
     setIsLoadingContracts(true)
@@ -44,6 +58,30 @@ export function ContractsPage() {
       )
       .finally(() => setIsLoadingContracts(false))
   }, [])
+
+  useEffect(() => {
+    const contractId = editContractId ?? deleteContractId
+    if (!contractId) return
+
+    getContract(contractId)
+      .then((contract) => {
+        if (contract) {
+          setRouteContract(contract)
+          setRouteError(null)
+        } else {
+          setRouteError({
+            contractId,
+            message: 'Contrato não encontrado.',
+          })
+        }
+      })
+      .catch(() =>
+        setRouteError({
+          contractId,
+          message: 'Não foi possível carregar o contrato.',
+        }),
+      )
+  }, [editContractId, deleteContractId])
 
   return (
     <main className="app-shell">
@@ -79,30 +117,68 @@ export function ContractsPage() {
       <section className="content-section" aria-labelledby="contracts-title">
         <div className="section-header">
           <h2 id="contracts-title">Contratos</h2>
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={() => void loadContracts()}
-            disabled={isLoadingContracts}
-          >
-            {isLoadingContracts ? 'Atualizando...' : 'Atualizar'}
-          </button>
-        </div>
-        <div className="contracts-layout">
-          <div>
-            <h3>Novo contrato</h3>
-            <ContractForm clients={clients} onContractCreated={loadContracts} />
+          <div className="section-actions">
+            <button
+              type="button"
+              onClick={() => navigate('/contracts/add')}
+              disabled={clients.length === 0}
+            >
+              Novo contrato
+            </button>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => void loadContracts()}
+              disabled={isLoadingContracts}
+            >
+              {isLoadingContracts ? 'Atualizando...' : 'Atualizar'}
+            </button>
           </div>
+        </div>
+        {routeError &&
+          routeError.contractId === (editContractId ?? deleteContractId) && (
+          <p className="form-message error" role="alert">
+            {routeError.message}
+          </p>
+        )}
+        <div className="contracts-layout">
           <div>
             <h3>Contratos cadastrados</h3>
             <ContractList
               contracts={contracts}
               isLoading={isLoadingContracts}
               errorMessage={contractsError}
+              onEdit={(contract) => navigate(`/contracts/${contract.id}/edit`)}
+              onDelete={(contract) =>
+                navigate(`/contracts/${contract.id}/delete`)
+              }
+              onChanged={loadContracts}
             />
           </div>
         </div>
       </section>
+      {createRoute && (
+        <CreateContractModal
+          clients={clients}
+          onCreated={loadContracts}
+          onClose={() => navigate('/contracts')}
+        />
+      )}
+      {editContractId && routeContract?.id === editContractId && (
+        <EditContractModal
+          clients={clients}
+          contract={routeContract}
+          onUpdated={loadContracts}
+          onClose={() => navigate('/contracts')}
+        />
+      )}
+      {deleteContractId && routeContract?.id === deleteContractId && (
+        <DeleteContractModal
+          contract={routeContract}
+          onDeleted={loadContracts}
+          onClose={() => navigate('/contracts')}
+        />
+      )}
     </main>
   )
 }

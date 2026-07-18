@@ -7,7 +7,12 @@ export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   {
     element: <ProtectedRoute />,
-    children: [{ path: '/contracts', element: <ContractsPage /> }],
+    children: [
+      { path: '/contracts', element: <ContractsPage /> },
+      { path: '/contracts/add', element: <ContractsPage /> },
+      { path: '/contracts/:id/edit', element: <ContractsPage /> },
+      { path: '/contracts/:id/delete', element: <ContractsPage /> },
+    ],
   },
   { path: '*', element: <Navigate to="/contracts" replace /> },
 ])

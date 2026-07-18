@@ -1,64 +1,75 @@
 import { type SubmitEvent, useState } from 'react'
 import { ApiError } from '../../../lib/api-client'
 import type { Client } from '../../clients/types/client'
-import { createContract } from '../api/contractsApi'
+import { createContract, updateContract } from '../api/contractsApi'
+import type { Contract } from '../types/contract'
 
-interface ContractFormProps {
+interface CreateContractFormProps {
+  mode: 'create'
   clients: Client[]
-  onContractCreated: () => void | Promise<void>
+  onSaved: () => void | Promise<void>
+  onCancel: () => void
 }
 
-export function ContractForm({ clients, onContractCreated }: ContractFormProps) {
-  const [number, setNumber] = useState('')
-  const [clientId, setClientId] = useState('')
-  const [value, setValue] = useState('')
-  const [dueDate, setDueDate] = useState('')
+interface EditContractFormProps {
+  mode: 'edit'
+  clients: Client[]
+  contract: Contract
+  onSaved: () => void | Promise<void>
+  onCancel: () => void
+}
+
+type ContractFormProps = CreateContractFormProps | EditContractFormProps
+
+export function ContractForm(props: ContractFormProps) {
+  const { clients, mode, onSaved } = props
+  const contract = mode === 'edit' ? props.contract : undefined
+  const [number, setNumber] = useState(contract?.number ?? '')
+  const [clientId, setClientId] = useState(contract?.client.id ?? '')
+  const [value, setValue] = useState(contract ? String(contract.value) : '')
+  const [dueDate, setDueDate] = useState(contract?.dueDate.slice(0, 10) ?? '')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [message, setMessage] = useState('')
-  const [isError, setIsError] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
-    setMessage('')
+    setErrorMessage('')
     const trimmedNumber = number.trim()
     const numericValue = Number(value)
 
     if (!trimmedNumber || !clientId || !value || !dueDate) {
-      setIsError(true)
-      setMessage('Preencha todos os campos do contrato.')
+      setErrorMessage('Preencha todos os campos do contrato.')
       return
     }
 
     if (!Number.isFinite(numericValue) || numericValue <= 0) {
-      setIsError(true)
-      setMessage('Informe um valor maior que zero.')
+      setErrorMessage('Informe um valor maior que zero.')
       return
     }
 
     setIsSubmitting(true)
 
     try {
-      await createContract({
+      const input = {
         number: trimmedNumber,
         clientId,
         value: numericValue,
         dueDate,
-      })
-      await onContractCreated()
-      setNumber('')
-      setClientId('')
-      setValue('')
-      setDueDate('')
-      setIsError(false)
-      setMessage('Contrato cadastrado com sucesso.')
-    } catch (error) {
-      setIsError(true)
-      if (error instanceof ApiError && error.status === 409) {
-        setMessage('Já existe um contrato com este número.')
-      } else if (error instanceof ApiError) {
-        setMessage(error.message)
+      }
+
+      if (mode === 'edit') {
+        await updateContract(props.contract.id, input)
       } else {
-        setMessage('Não foi possível conectar à API.')
+        await createContract(input)
+      }
+      await onSaved()
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        setErrorMessage('Já existe um contrato com este número.')
+      } else if (error instanceof ApiError) {
+        setErrorMessage(error.message)
+      } else {
+        setErrorMessage('Não foi possível conectar à API.')
       }
     } finally {
       setIsSubmitting(false)
@@ -124,20 +135,31 @@ export function ContractForm({ clients, onContractCreated }: ContractFormProps) 
         />
       </div>
 
-      <button type="submit" disabled={isDisabled}>
-        {isSubmitting ? 'Cadastrando...' : 'Cadastrar contrato'}
-      </button>
+      <div className="form-actions">
+        <button type="submit" disabled={isDisabled}>
+          {isSubmitting
+            ? 'Salvando...'
+            : mode === 'edit'
+              ? 'Salvar alterações'
+              : 'Cadastrar contrato'}
+        </button>
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={props.onCancel}
+          disabled={isSubmitting}
+        >
+          Cancelar
+        </button>
+      </div>
 
       {clients.length === 0 && (
         <p className="form-message">Cadastre um cliente antes do contrato.</p>
       )}
 
-      {message && (
-        <p
-          className={isError ? 'form-message error' : 'form-message success'}
-          role={isError ? 'alert' : 'status'}
-        >
-          {message}
+      {errorMessage && (
+        <p className="form-message error" role="alert">
+          {errorMessage}
         </p>
       )}
     </form>

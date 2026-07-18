@@ -74,6 +74,12 @@ h1 {
   margin-bottom: 0;
 }
 
+.section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .secondary-button {
   color: #172033;
   background: #ffffff;
@@ -113,8 +119,64 @@ h1 {
   grid-template-columns: 1fr;
 }
 
-.contract-form button {
+.contract-form > button,
+.contract-form > .form-actions {
   align-self: end;
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+}
+
+.form-actions,
+.table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.danger-button {
+  background: #9b2c2c;
+}
+
+.table-actions button {
+  padding: 0.45rem 0.7rem;
+}
+
+.modal-backdrop {
+  position: fixed;
+  z-index: 10;
+  inset: 0;
+  display: grid;
+  overflow-y: auto;
+  padding: 1rem;
+  background: rgb(23 32 51 / 55%);
+  place-items: center;
+}
+
+.modal-card {
+  width: min(52rem, 100%);
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  box-shadow: 0 1rem 3rem rgb(23 32 51 / 25%);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.modal-header h2 {
+  margin: 0;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
 }
 
 .form-field {

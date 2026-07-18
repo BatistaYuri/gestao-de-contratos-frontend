@@ -17,3 +17,5 @@ export interface CreateContractInput {
   value: number
   dueDate: string
 }
+
+export type UpdateContractInput = CreateContractInput
