@@ -9,11 +9,6 @@ export function configureApiAuth(config: {
 }) {
   getAccessToken = config.getToken
   handleUnauthorized = config.onUnauthorized
-
-  return () => {
-    getAccessToken = () => null
-    handleUnauthorized = () => undefined
-  }
 }
 
 export class ApiError extends Error {
