@@ -1,5 +1,20 @@
 const API_URL = import.meta.env.VITE_API_URL ?? '/api'
-const TOKEN_STORAGE_KEY = 'auth_token'
+
+let getAccessToken: () => string | null = () => null
+let handleUnauthorized: () => void = () => undefined
+
+export function configureApiAuth(config: {
+  getToken: () => string | null
+  onUnauthorized: () => void
+}) {
+  getAccessToken = config.getToken
+  handleUnauthorized = config.onUnauthorized
+
+  return () => {
+    getAccessToken = () => null
+    handleUnauthorized = () => undefined
+  }
+}
 
 export class ApiError extends Error {
   readonly status: number
@@ -16,7 +31,7 @@ export async function apiRequest<T>(
   options: RequestInit = {},
 ): Promise<T | undefined> {
   const headers = new Headers(options.headers)
-  const token = localStorage.getItem(TOKEN_STORAGE_KEY)
+  const token = getAccessToken()
 
   if (options.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json')
@@ -30,6 +45,10 @@ export async function apiRequest<T>(
     const response = await fetch(`${API_URL}${path}`, { ...options, headers })
 
     if (!response.ok) {
+      if (response.status === 401) {
+        handleUnauthorized()
+      }
+
       throw new ApiError(
         `A requisição falhou com status ${response.status}.`,
         response.status,
