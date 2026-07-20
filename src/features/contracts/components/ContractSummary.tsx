@@ -7,10 +7,10 @@ interface ContractSummaryProps {
 }
 
 const summaryItems = [
-  { key: 'active', label: 'Ativos' },
-  { key: 'expired', label: 'Vencidos' },
-  { key: 'closed', label: 'Encerrados' },
-  { key: 'total', label: 'Total' },
+  { key: 'active', label: 'Ativos', className: 'summary-active' },
+  { key: 'expired', label: 'Vencidos', className: 'summary-expired' },
+  { key: 'closed', label: 'Encerrados', className: 'summary-closed' },
+  { key: 'total', label: 'Total', className: 'summary-total' },
 ] as const
 
 export function ContractSummary({
@@ -31,7 +31,7 @@ export function ContractSummary({
   return (
     <dl className="contract-summary">
       {summaryItems.map((item) => (
-        <div className="summary-card" key={item.key}>
+        <div className={`summary-card ${item.className}`} key={item.key}>
           <dt>{item.label}</dt>
           <dd>{summary[item.key]}</dd>
         </div>

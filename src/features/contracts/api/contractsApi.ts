@@ -17,8 +17,13 @@ export async function getContracts(filters: ContractFilters = {}) {
   return (await apiRequest<Contract[]>(`/contracts${query}`)) ?? []
 }
 
-export async function getContractSummary() {
-  return apiRequest<ContractSummary>('/contracts/summary')
+export async function getContractSummary(filters: ContractFilters = {}) {
+  const params = new URLSearchParams()
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value) params.set(key, value)
+  })
+  const query = params.size ? `?${params.toString()}` : ''
+  return apiRequest<ContractSummary>(`/contracts/summary${query}`)
 }
 
 export async function createContract(input: CreateContractInput) {
