@@ -39,6 +39,8 @@ export function LoginForm() {
       <input
         id="username"
         type="text"
+        placeholder="Digite seu usuário"
+        autoComplete="username"
         value={username}
         onChange={(event) => setUsername(event.target.value)}
         disabled={isSubmitting}
@@ -49,6 +51,8 @@ export function LoginForm() {
       <input
         id="password"
         type="password"
+        placeholder="Digite sua senha"
+        autoComplete="current-password"
         value={password}
         onChange={(event) => setPassword(event.target.value)}
         disabled={isSubmitting}

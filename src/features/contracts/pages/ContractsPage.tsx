@@ -89,20 +89,22 @@ export function ContractsPage() {
       .finally(() => setIsLoadingClients(false))
   }
 
-  function fetchSummary() {
-    return getContractSummary()
+  function fetchSummary(activeFilters = filters) {
+    setIsLoadingSummary(true)
+    setSummaryError('')
+    return getContractSummary(activeFilters)
       .then((data) => setSummary(data ?? null))
       .catch(() => setSummaryError('Não foi possível carregar o resumo.'))
       .finally(() => setIsLoadingSummary(false))
   }
 
-  async function loadContractsAndSummary() {
+  async function loadContractsAndSummary(activeFilters = filters) {
     setIsLoadingContracts(true)
     setIsLoadingSummary(true)
     setContractsError('')
     setSummaryError('')
 
-    await Promise.all([fetchContracts(), fetchSummary()])
+    await Promise.all([fetchContracts(activeFilters), fetchSummary(activeFilters)])
   }
 
   useEffect(() => {
@@ -111,7 +113,6 @@ export function ContractsPage() {
       .catch(() => setClientsError('Não foi possível carregar os clientes.'))
       .finally(() => setIsLoadingClients(false))
 
-    void fetchSummary()
   }, [])
 
   useEffect(() => {
@@ -121,19 +122,33 @@ export function ContractsPage() {
       approvalStatus: (searchParams.get('approvalStatus') || undefined) as ContractFiltersData['approvalStatus'],
       clientId: searchParams.get('clientId') || undefined,
     }
-    getContracts(activeFilters)
-      .then(setContracts)
-      .catch(() => setContractsError('Não foi possível carregar os contratos.'))
-      .finally(() => setIsLoadingContracts(false))
+    void Promise.all([
+      getContracts(activeFilters)
+        .then(setContracts)
+        .catch(() => setContractsError('Não foi possível carregar os contratos.'))
+        .finally(() => setIsLoadingContracts(false)),
+      getContractSummary(activeFilters)
+        .then((data) => setSummary(data ?? null))
+        .catch(() => setSummaryError('Não foi possível carregar o resumo.'))
+        .finally(() => setIsLoadingSummary(false)),
+    ])
   }, [searchParams])
 
   function applyFilters(nextFilters: ContractFiltersData) {
-    setIsLoadingContracts(true)
-    setContractsError('')
     const params = new URLSearchParams()
     Object.entries(nextFilters).forEach(([key, value]) => {
       if (value) params.set(key, value)
     })
+
+    if (params.toString() === filterSearch) {
+      void loadContractsAndSummary(nextFilters)
+      return
+    }
+
+    setIsLoadingContracts(true)
+    setIsLoadingSummary(true)
+    setContractsError('')
+    setSummaryError('')
     setSearchParams(params)
   }
 
@@ -182,7 +197,12 @@ export function ContractsPage() {
   return (
     <main className="app-shell">
       <header className="app-header">
-        <h1>Gestão de Contratos</h1>
+        <div className="brand-lockup">
+          <img src="https://webmaissistemas.com.br/assets/images/logos/logo-webmais-positive.svg" alt="WebMais Sistemas" />
+          <div>
+            <p>Gestão de Contratos</p>
+          </div>
+        </div>
         <button type="button" className="secondary-button" onClick={logout}>
           Sair
         </button>
@@ -210,15 +230,6 @@ export function ContractsPage() {
               <p className="form-message success" role="status">{clientActionMessage}</p>
             )}
         </div>
-      </section>
-
-      <section className="content-section" aria-labelledby="summary-title">
-        <h2 id="summary-title">Resumo</h2>
-        <ContractSummary
-          summary={summary}
-          isLoading={isLoadingSummary}
-          errorMessage={summaryError}
-        />
       </section>
 
       <section className="content-section" aria-labelledby="contracts-title">
@@ -253,6 +264,14 @@ export function ContractsPage() {
         <div className="contracts-layout">
           <div>
             <ContractFilters clients={clients} filters={filters} onApply={applyFilters} />
+            <div className="summary-block" aria-labelledby="summary-title">
+              <h3 id="summary-title">Resumo dos contratos</h3>
+              <ContractSummary
+                summary={summary}
+                isLoading={isLoadingSummary}
+                errorMessage={summaryError}
+              />
+            </div>
             <h3>Contratos cadastrados</h3>
             <ContractList
               contracts={contracts}

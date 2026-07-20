@@ -1,4 +1,5 @@
 import type { Client } from '../types/client'
+import { ActionMenu } from '../../../components/ActionMenu'
 
 interface ClientListProps {
   clients: Client[]
@@ -26,19 +27,19 @@ export function ClientList({ clients, isLoading, errorMessage, onEdit, onDelete 
           <tr>
             <th>Nome</th>
             <th>Documento</th>
-            <th>Ações</th>
+            <th className="actions-column">Ações</th>
           </tr>
         </thead>
         <tbody>
           {clients.map((client) => (
             <tr key={client.id}>
-              <td>{client.name}</td>
-              <td>{client.document}</td>
-              <td>
-                <div className="table-actions">
-                  <button type="button" className="secondary-button" onClick={() => onEdit(client)}>Editar</button>
-                  <button type="button" className="danger-button" onClick={() => onDelete(client)}>Excluir</button>
-                </div>
+              <td data-label="Nome">{client.name}</td>
+              <td data-label="Documento">{client.document}</td>
+              <td className="actions-column" data-label="Ações">
+                <ActionMenu label={`Abrir ações do cliente ${client.name}`}>
+                    <button type="button" onClick={() => onEdit(client)}>Editar</button>
+                    <button type="button" className="danger-menu-item" onClick={() => onDelete(client)}>Excluir</button>
+                </ActionMenu>
               </td>
             </tr>
           ))}
