@@ -1,13 +1,20 @@
 import { apiRequest } from '../../../lib/api-client'
 import type {
+  ApprovalHistoryEntry,
   Contract,
+  ContractFilters,
   ContractSummary,
   CreateContractInput,
   UpdateContractInput,
 } from '../types/contract'
 
-export async function getContracts() {
-  return (await apiRequest<Contract[]>('/contracts')) ?? []
+export async function getContracts(filters: ContractFilters = {}) {
+  const params = new URLSearchParams()
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value) params.set(key, value)
+  })
+  const query = params.size ? `?${params.toString()}` : ''
+  return (await apiRequest<Contract[]>(`/contracts${query}`)) ?? []
 }
 
 export async function getContractSummary() {
@@ -15,7 +22,7 @@ export async function getContractSummary() {
 }
 
 export async function createContract(input: CreateContractInput) {
-  await apiRequest('/contracts', {
+  return apiRequest<Contract>('/contracts', {
     method: 'POST',
     body: JSON.stringify(input),
   })
@@ -26,14 +33,39 @@ export async function getContract(id: string) {
 }
 
 export async function updateContract(id: string, input: UpdateContractInput) {
-  await apiRequest(`/contracts/${id}`, {
+  return apiRequest<Contract>(`/contracts/${id}`, {
     method: 'PUT',
     body: JSON.stringify(input),
   })
 }
 
-export async function closeContract(id: string) {
-  await apiRequest(`/contracts/${id}/close`, { method: 'PATCH' })
+function transition(id: string, action: string, body?: object) {
+  return apiRequest<Contract>(`/contracts/${id}/${action}`, {
+    method: 'PATCH',
+    body: body ? JSON.stringify(body) : undefined,
+  })
+}
+
+export function submitContract(id: string) {
+  return transition(id, 'submit')
+}
+
+export function approveContract(id: string) {
+  return transition(id, 'approve')
+}
+
+export function rejectContract(id: string, reason: string) {
+  return transition(id, 'reject', { reason })
+}
+
+export function closeContract(id: string) {
+  return transition(id, 'close')
+}
+
+export async function getApprovalHistory(id: string) {
+  return (await apiRequest<ApprovalHistoryEntry[]>(
+    `/contracts/${id}/approval-history`,
+  )) ?? []
 }
 
 export async function deleteContract(id: string) {

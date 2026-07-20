@@ -1,136 +1,51 @@
 import { useState } from 'react'
 import { ApiError } from '../../../lib/api-client'
-import { closeContract } from '../api/contractsApi'
+import { approveContract, closeContract, submitContract } from '../api/contractsApi'
+import { contractTypeLabels } from '../presentation'
 import { ContractStatusBadge } from './ContractStatusBadge'
 import type { Contract } from '../types/contract'
 
-interface ContractListProps {
-  contracts: Contract[]
-  isLoading: boolean
-  errorMessage: string
-  onEdit: (contract: Contract) => void
-  onDelete: (contract: Contract) => void
+interface Props {
+  contracts: Contract[]; isLoading: boolean; errorMessage: string
+  onEdit: (contract: Contract) => void; onDelete: (contract: Contract) => void
+  onHistory: (contract: Contract) => void; onReject: (contract: Contract) => void
   onChanged: () => void | Promise<void>
 }
+const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+const date = new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' })
 
-const currencyFormatter = new Intl.NumberFormat('pt-BR', {
-  style: 'currency',
-  currency: 'BRL',
-})
-const dateFormatter = new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' })
-
-export function ContractList({
-  contracts,
-  isLoading,
-  errorMessage,
-  onEdit,
-  onDelete,
-  onChanged,
-}: ContractListProps) {
+export function ContractList({ contracts, isLoading, errorMessage, onEdit, onDelete, onHistory, onReject, onChanged }: Props) {
   const [processingId, setProcessingId] = useState('')
-  const [actionMessage, setActionMessage] = useState('')
-  const [isActionError, setIsActionError] = useState(false)
+  const [message, setMessage] = useState('')
+  const [isError, setIsError] = useState(false)
 
-  async function closeSelectedContract(contract: Contract) {
-    if (!window.confirm(`Deseja encerrar o contrato ${contract.number}?`)) return
-
-    setProcessingId(contract.id)
-    setActionMessage('')
-
+  async function run(contract: Contract, action: 'submit' | 'approve' | 'close') {
+    const prompts = { submit: 'enviar para aprovação', approve: 'aprovar', close: 'encerrar' }
+    if (!window.confirm(`Deseja ${prompts[action]} o contrato ${contract.number}?`)) return
+    setProcessingId(contract.id); setMessage('')
     try {
-      await closeContract(contract.id)
-      await onChanged()
-      setIsActionError(false)
-      setActionMessage('Contrato encerrado com sucesso.')
+      if (action === 'submit') await submitContract(contract.id)
+      if (action === 'approve') await approveContract(contract.id)
+      if (action === 'close') await closeContract(contract.id)
+      await onChanged(); setIsError(false); setMessage('Contrato atualizado com sucesso.')
     } catch (error) {
-      setIsActionError(true)
-      setActionMessage(
-        error instanceof ApiError
-          ? error.message
-          : 'Não foi possível encerrar o contrato.',
-      )
-    } finally {
-      setProcessingId('')
-    }
+      setIsError(true)
+      if (error instanceof ApiError && error.status === 409) {
+        await onChanged(); setMessage('O estado do contrato já foi alterado em outra sessão. A lista foi atualizada.')
+      } else setMessage(error instanceof ApiError ? error.message : 'Não foi possível atualizar o contrato.')
+    } finally { setProcessingId('') }
   }
 
   if (isLoading) return <p>Carregando contratos...</p>
-  if (errorMessage) {
-    return (
-      <p className="form-message error" role="alert">
-        {errorMessage}
-      </p>
-    )
-  }
-  if (contracts.length === 0) return <p>Nenhum contrato cadastrado.</p>
-
-  return (
-    <>
-      {actionMessage && (
-        <p
-          className={isActionError ? 'form-message error' : 'form-message success'}
-          role={isActionError ? 'alert' : 'status'}
-        >
-          {actionMessage}
-        </p>
-      )}
-      <div className="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th>Número</th>
-            <th>Cliente</th>
-            <th>Valor</th>
-            <th>Vencimento</th>
-            <th>Status</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {contracts.map((contract) => (
-            <tr key={contract.id}>
-              <td>{contract.number}</td>
-              <td>{contract.client.name}</td>
-              <td>{currencyFormatter.format(Number(contract.value))}</td>
-              <td>{dateFormatter.format(new Date(contract.dueDate))}</td>
-              <td>
-                <ContractStatusBadge status={contract.status} />
-              </td>
-              <td aria-label={`Ações do contrato ${contract.number}`}>
-                <div className="table-actions">
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => onEdit(contract)}
-                    disabled={Boolean(processingId)}
-                  >
-                    Editar
-                  </button>
-                  {contract.status !== 'CLOSED' && (
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() => void closeSelectedContract(contract)}
-                      disabled={Boolean(processingId)}
-                    >
-                      {processingId === contract.id ? 'Processando...' : 'Encerrar'}
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    className="danger-button"
-                    onClick={() => onDelete(contract)}
-                    disabled={Boolean(processingId)}
-                  >
-                    Excluir
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      </div>
-    </>
-  )
+  if (errorMessage) return <p className="form-message error" role="alert">{errorMessage}</p>
+  if (contracts.length === 0) return <p>Nenhum contrato encontrado.</p>
+  return <>{message && <p className={`form-message ${isError ? 'error' : 'success'}`} role={isError ? 'alert' : 'status'}>{message}</p>}<div className="table-wrapper"><table><thead><tr><th>Número</th><th>Cliente</th><th>Tipo</th><th>Valor</th><th>Vencimento</th><th>Vigência</th><th>Aprovação</th><th>Ações</th></tr></thead><tbody>
+    {contracts.map((contract) => { const editable = contract.approvalStatus === 'DRAFT' || contract.approvalStatus === 'REJECTED'; const busy = Boolean(processingId); return <tr key={contract.id}><td>{contract.number}</td><td>{contract.client.name}</td><td>{contractTypeLabels[contract.type]}</td><td><span>{money.format(Number(contract.value))}</span><small className="financial-details">Subtotal {money.format(Number(contract.subtotal))}<br />Desconto {money.format(Number(contract.discount))}<br />Taxas {money.format(Number(contract.additionalFees))}</small></td><td>{date.format(new Date(contract.dueDate))}</td><td><ContractStatusBadge kind="term" status={contract.status} /></td><td><ContractStatusBadge kind="approval" status={contract.approvalStatus} /></td><td aria-label={`Ações do contrato ${contract.number}`}><div className="table-actions">
+      {editable && <><button type="button" className="secondary-button" onClick={() => onEdit(contract)} disabled={busy}>Editar</button><button type="button" onClick={() => void run(contract, 'submit')} disabled={busy}>{processingId === contract.id ? 'Processando...' : 'Enviar'}</button></>}
+      {contract.approvalStatus === 'PENDING' && <><button type="button" onClick={() => void run(contract, 'approve')} disabled={busy}>{processingId === contract.id ? 'Processando...' : 'Aprovar'}</button><button type="button" className="danger-button" onClick={() => onReject(contract)} disabled={busy}>Rejeitar</button></>}
+      {contract.approvalStatus === 'APPROVED' && contract.status !== 'CLOSED' && <button type="button" className="secondary-button" onClick={() => void run(contract, 'close')} disabled={busy}>{processingId === contract.id ? 'Processando...' : 'Encerrar'}</button>}
+      <button type="button" className="secondary-button" onClick={() => onHistory(contract)} disabled={busy}>Histórico</button>
+      <button type="button" className="danger-button" onClick={() => onDelete(contract)} disabled={busy}>Excluir</button>
+    </div></td></tr> })}
+  </tbody></table></div></>
 }

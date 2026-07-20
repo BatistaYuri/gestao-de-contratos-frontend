@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useMatch, useNavigate } from 'react-router-dom'
+import { useMatch, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../auth/context/useAuth'
 import { getClient, getClients } from '../../clients/api/clientsApi'
 import { CreateClientModal } from '../../clients/components/CreateClientModal'
@@ -16,15 +16,20 @@ import { CreateContractModal } from '../components/CreateContractModal'
 import { DeleteContractModal } from '../components/DeleteContractModal'
 import { EditContractModal } from '../components/EditContractModal'
 import { ContractList } from '../components/ContractList'
+import { ContractFilters } from '../components/ContractFilters'
+import { ApprovalHistoryModal } from '../components/ApprovalHistoryModal'
+import { RejectContractModal } from '../components/RejectContractModal'
 import { ContractSummary } from '../components/ContractSummary'
 import type {
   Contract,
+  ContractFilters as ContractFiltersData,
   ContractSummary as ContractSummaryData,
 } from '../types/contract'
 
 export function ContractsPage() {
   const { logout } = useAuth()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const createRoute = useMatch('/contracts/add')
   const createClientRoute = useMatch('/clients/add')
   const editRoute = useMatch('/contracts/:id/edit')
@@ -47,13 +52,27 @@ export function ContractsPage() {
   const [isLoadingSummary, setIsLoadingSummary] = useState(true)
   const [summaryError, setSummaryError] = useState('')
   const [routeContract, setRouteContract] = useState<Contract | null>(null)
+  const [historyContract, setHistoryContract] = useState<Contract | null>(null)
+  const [rejectingContract, setRejectingContract] = useState<Contract | null>(null)
   const [routeError, setRouteError] = useState<{
     contractId: string
     message: string
   } | null>(null)
 
-  function fetchContracts() {
-    return getContracts()
+  const filters: ContractFiltersData = {
+    status: (searchParams.get('status') || undefined) as ContractFiltersData['status'],
+    type: (searchParams.get('type') || undefined) as ContractFiltersData['type'],
+    approvalStatus: (searchParams.get('approvalStatus') || undefined) as ContractFiltersData['approvalStatus'],
+    clientId: searchParams.get('clientId') || undefined,
+  }
+  const filterSearch = searchParams.toString()
+  const listLocation = { pathname: '/contracts', search: filterSearch }
+  const withFilters = (pathname: string) => ({ pathname, search: filterSearch })
+
+  function fetchContracts(activeFilters = filters) {
+    setIsLoadingContracts(true)
+    setContractsError('')
+    return getContracts(activeFilters)
       .then(setContracts)
       .catch(() =>
         setContractsError('Não foi possível carregar os contratos.'),
@@ -92,9 +111,31 @@ export function ContractsPage() {
       .catch(() => setClientsError('Não foi possível carregar os clientes.'))
       .finally(() => setIsLoadingClients(false))
 
-    void fetchContracts()
     void fetchSummary()
   }, [])
+
+  useEffect(() => {
+    const activeFilters: ContractFiltersData = {
+      status: (searchParams.get('status') || undefined) as ContractFiltersData['status'],
+      type: (searchParams.get('type') || undefined) as ContractFiltersData['type'],
+      approvalStatus: (searchParams.get('approvalStatus') || undefined) as ContractFiltersData['approvalStatus'],
+      clientId: searchParams.get('clientId') || undefined,
+    }
+    getContracts(activeFilters)
+      .then(setContracts)
+      .catch(() => setContractsError('Não foi possível carregar os contratos.'))
+      .finally(() => setIsLoadingContracts(false))
+  }, [searchParams])
+
+  function applyFilters(nextFilters: ContractFiltersData) {
+    setIsLoadingContracts(true)
+    setContractsError('')
+    const params = new URLSearchParams()
+    Object.entries(nextFilters).forEach(([key, value]) => {
+      if (value) params.set(key, value)
+    })
+    setSearchParams(params)
+  }
 
   useEffect(() => {
     if (!clientRouteId) return
@@ -186,7 +227,7 @@ export function ContractsPage() {
           <div className="section-actions">
             <button
               type="button"
-              onClick={() => navigate('/contracts/add')}
+              onClick={() => navigate(withFilters('/contracts/add'))}
               disabled={clients.length === 0}
             >
               Novo contrato
@@ -211,15 +252,18 @@ export function ContractsPage() {
         )}
         <div className="contracts-layout">
           <div>
+            <ContractFilters clients={clients} filters={filters} onApply={applyFilters} />
             <h3>Contratos cadastrados</h3>
             <ContractList
               contracts={contracts}
               isLoading={isLoadingContracts}
               errorMessage={contractsError}
-              onEdit={(contract) => navigate(`/contracts/${contract.id}/edit`)}
+              onEdit={(contract) => navigate(withFilters(`/contracts/${contract.id}/edit`))}
               onDelete={(contract) =>
-                navigate(`/contracts/${contract.id}/delete`)
+                navigate(withFilters(`/contracts/${contract.id}/delete`))
               }
+              onHistory={setHistoryContract}
+              onReject={setRejectingContract}
               onChanged={loadContractsAndSummary}
             />
           </div>
@@ -229,7 +273,7 @@ export function ContractsPage() {
         <CreateContractModal
           clients={clients}
           onCreated={loadContractsAndSummary}
-          onClose={() => navigate('/contracts')}
+          onClose={() => navigate(listLocation)}
         />
       )}
       {createClientRoute && (
@@ -238,7 +282,7 @@ export function ContractsPage() {
             setClients((current) => [...current, client])
             setClientActionMessage('Cliente cadastrado com sucesso.')
           }}
-          onClose={() => navigate('/contracts')}
+          onClose={() => navigate(listLocation)}
         />
       )}
       {editContractId && routeContract?.id === editContractId && (
@@ -246,14 +290,14 @@ export function ContractsPage() {
           clients={clients}
           contract={routeContract}
           onUpdated={loadContractsAndSummary}
-          onClose={() => navigate('/contracts')}
+          onClose={() => navigate(listLocation)}
         />
       )}
       {deleteContractId && routeContract?.id === deleteContractId && (
         <DeleteContractModal
           contract={routeContract}
           onDeleted={loadContractsAndSummary}
-          onClose={() => navigate('/contracts')}
+          onClose={() => navigate(listLocation)}
         />
       )}
       {editClientRoute && routeClient && routeClient.id === clientRouteId && (
@@ -265,7 +309,7 @@ export function ContractsPage() {
             setClientActionMessage('Cliente atualizado com sucesso.')
           }}
           onNotFound={fetchClients}
-          onClose={() => navigate('/contracts')}
+          onClose={() => navigate(listLocation)}
         />
       )}
       {deleteClientRoute && routeClient && routeClient.id === clientRouteId && (
@@ -276,7 +320,18 @@ export function ContractsPage() {
             setClientActionMessage('Cliente excluído com sucesso.')
           }}
           onNotFound={fetchClients}
-          onClose={() => navigate('/contracts')}
+          onClose={() => navigate(listLocation)}
+        />
+      )}
+      {historyContract && (
+        <ApprovalHistoryModal contract={historyContract} onClose={() => setHistoryContract(null)} />
+      )}
+      {rejectingContract && (
+        <RejectContractModal
+          contract={rejectingContract}
+          onClose={() => setRejectingContract(null)}
+          onChanged={loadContractsAndSummary}
+          onConflict={loadContractsAndSummary}
         />
       )}
     </main>
