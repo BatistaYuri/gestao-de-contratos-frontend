@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ApiError } from '../../../lib/api-client'
 import { deleteContract } from '../api/contractsApi'
 import type { Contract } from '../types/contract'
-import { ContractModal } from './ContractModal'
+import { Modal } from '../../../components/Modal'
 
 interface DeleteContractModalProps {
   contract: Contract
@@ -37,7 +37,7 @@ export function DeleteContractModal({
   }
 
   return (
-    <ContractModal title="Excluir contrato" onClose={onClose}>
+    <Modal title="Excluir contrato" onClose={onClose}>
       <p>
         Deseja excluir o contrato <strong>{contract.number}</strong>?
       </p>
@@ -64,6 +64,6 @@ export function DeleteContractModal({
           {isDeleting ? 'Excluindo...' : 'Excluir contrato'}
         </button>
       </div>
-    </ContractModal>
+    </Modal>
   )
 }

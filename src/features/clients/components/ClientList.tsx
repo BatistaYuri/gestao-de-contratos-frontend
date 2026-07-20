@@ -4,9 +4,11 @@ interface ClientListProps {
   clients: Client[]
   isLoading: boolean
   errorMessage: string
+  onEdit: (client: Client) => void
+  onDelete: (client: Client) => void
 }
 
-export function ClientList({ clients, isLoading, errorMessage }: ClientListProps) {
+export function ClientList({ clients, isLoading, errorMessage, onEdit, onDelete }: ClientListProps) {
   if (isLoading) return <p>Carregando clientes...</p>
   if (errorMessage) {
     return (
@@ -24,6 +26,7 @@ export function ClientList({ clients, isLoading, errorMessage }: ClientListProps
           <tr>
             <th>Nome</th>
             <th>Documento</th>
+            <th>Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -31,6 +34,12 @@ export function ClientList({ clients, isLoading, errorMessage }: ClientListProps
             <tr key={client.id}>
               <td>{client.name}</td>
               <td>{client.document}</td>
+              <td>
+                <div className="table-actions">
+                  <button type="button" className="secondary-button" onClick={() => onEdit(client)}>Editar</button>
+                  <button type="button" className="danger-button" onClick={() => onDelete(client)}>Excluir</button>
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>

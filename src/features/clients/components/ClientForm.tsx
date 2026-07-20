@@ -4,10 +4,11 @@ import { createClient } from '../api/clientsApi'
 import type { Client } from '../types/client'
 
 interface ClientFormProps {
-  onClientCreated: (client: Client) => void
+  onClientCreated: (client: Client) => void | Promise<void>
+  onCancel: () => void
 }
 
-export function ClientForm({ onClientCreated }: ClientFormProps) {
+export function ClientForm({ onClientCreated, onCancel }: ClientFormProps) {
   const [name, setName] = useState('')
   const [document, setDocument] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -18,11 +19,11 @@ export function ClientForm({ onClientCreated }: ClientFormProps) {
     event.preventDefault()
     setMessage('')
     const trimmedName = name.trim()
-    const trimmedDocument = document.trim()
+    const normalizedDocument = document.replace(/\D/g, '')
 
-    if (!trimmedName || !trimmedDocument) {
+    if (trimmedName.length < 2 || !normalizedDocument) {
       setIsError(true)
-      setMessage('Informe o nome e o documento.')
+      setMessage('Informe um nome com ao menos dois caracteres e um documento com pelo menos um número.')
       return
     }
 
@@ -31,9 +32,9 @@ export function ClientForm({ onClientCreated }: ClientFormProps) {
     try {
       const client = await createClient({
         name: trimmedName,
-        document: trimmedDocument,
+        document: normalizedDocument,
       })
-      onClientCreated(client)
+      await onClientCreated(client)
       setName('')
       setDocument('')
       setIsError(false)
@@ -72,13 +73,10 @@ export function ClientForm({ onClientCreated }: ClientFormProps) {
           value={document}
           onChange={(event) => setDocument(event.target.value)}
           disabled={isSubmitting}
+          inputMode="numeric"
           required
         />
       </div>
-
-      <button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? 'Cadastrando...' : 'Cadastrar cliente'}
-      </button>
 
       {message && (
         <p
@@ -88,6 +86,20 @@ export function ClientForm({ onClientCreated }: ClientFormProps) {
           {message}
         </p>
       )}
+
+      <div className="form-actions">
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={onCancel}
+          disabled={isSubmitting}
+        >
+          Cancelar
+        </button>
+        <button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Cadastrando...' : 'Cadastrar cliente'}
+        </button>
+      </div>
     </form>
   )
 }

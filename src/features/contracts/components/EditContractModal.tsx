@@ -1,7 +1,7 @@
 import type { Client } from '../../clients/types/client'
 import type { Contract } from '../types/contract'
 import { ContractForm } from './ContractForm'
-import { ContractModal } from './ContractModal'
+import { Modal } from '../../../components/Modal'
 
 interface EditContractModalProps {
   clients: Client[]
@@ -17,7 +17,7 @@ export function EditContractModal({
   onUpdated,
 }: EditContractModalProps) {
   return (
-    <ContractModal title="Editar contrato" onClose={onClose}>
+    <Modal title="Editar contrato" onClose={onClose}>
       <ContractForm
         mode="edit"
         clients={clients}
@@ -28,6 +28,6 @@ export function EditContractModal({
         }}
         onCancel={onClose}
       />
-    </ContractModal>
+    </Modal>
   )
 }

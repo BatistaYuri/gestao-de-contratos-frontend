@@ -13,12 +13,19 @@ export function configureApiAuth(config: {
 
 export class ApiError extends Error {
   readonly status: number
+  readonly issues: ApiIssue[]
 
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, issues: ApiIssue[] = []) {
     super(message)
     this.name = 'ApiError'
     this.status = status
+    this.issues = issues
   }
+}
+
+export interface ApiIssue {
+  path?: string | (string | number)[]
+  message?: string
 }
 
 export async function apiRequest<T>(
@@ -44,9 +51,17 @@ export async function apiRequest<T>(
         handleUnauthorized()
       }
 
+      let body: { message?: string; issues?: ApiIssue[] } = {}
+      try {
+        body = (await response.json()) as typeof body
+      } catch {
+        // Some API errors legitimately have no JSON response body.
+      }
+
       throw new ApiError(
-        `A requisição falhou com status ${response.status}.`,
+        body.message ?? `A requisição falhou com status ${response.status}.`,
         response.status,
+        Array.isArray(body.issues) ? body.issues : [],
       )
     }
 

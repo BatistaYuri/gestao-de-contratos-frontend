@@ -145,7 +145,8 @@ h1 {
 }
 
 .contract-form > button,
-.contract-form > .form-actions {
+.contract-form > .form-actions,
+.client-form > .form-actions {
   align-self: end;
   grid-column: 1 / -1;
   justify-content: flex-end;

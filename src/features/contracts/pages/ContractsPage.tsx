@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useMatch, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/context/useAuth'
-import { getClients } from '../../clients/api/clientsApi'
-import { ClientForm } from '../../clients/components/ClientForm'
+import { getClient, getClients } from '../../clients/api/clientsApi'
+import { CreateClientModal } from '../../clients/components/CreateClientModal'
+import { DeleteClientModal } from '../../clients/components/DeleteClientModal'
+import { EditClientModal } from '../../clients/components/EditClientModal'
 import { ClientList } from '../../clients/components/ClientList'
 import type { Client } from '../../clients/types/client'
 import {
@@ -24,13 +26,20 @@ export function ContractsPage() {
   const { logout } = useAuth()
   const navigate = useNavigate()
   const createRoute = useMatch('/contracts/add')
+  const createClientRoute = useMatch('/clients/add')
   const editRoute = useMatch('/contracts/:id/edit')
   const deleteRoute = useMatch('/contracts/:id/delete')
+  const editClientRoute = useMatch('/clients/:id/edit')
+  const deleteClientRoute = useMatch('/clients/:id/delete')
   const editContractId = editRoute?.params.id
   const deleteContractId = deleteRoute?.params.id
+  const clientRouteId = editClientRoute?.params.id ?? deleteClientRoute?.params.id
   const [clients, setClients] = useState<Client[]>([])
   const [isLoadingClients, setIsLoadingClients] = useState(true)
   const [clientsError, setClientsError] = useState('')
+  const [routeClient, setRouteClient] = useState<Client | null>(null)
+  const [clientRouteError, setClientRouteError] = useState('')
+  const [clientActionMessage, setClientActionMessage] = useState('')
   const [contracts, setContracts] = useState<Contract[]>([])
   const [isLoadingContracts, setIsLoadingContracts] = useState(true)
   const [contractsError, setContractsError] = useState('')
@@ -50,6 +59,15 @@ export function ContractsPage() {
         setContractsError('Não foi possível carregar os contratos.'),
       )
       .finally(() => setIsLoadingContracts(false))
+  }
+
+  function fetchClients() {
+    setIsLoadingClients(true)
+    setClientsError('')
+    return getClients()
+      .then(setClients)
+      .catch(() => setClientsError('Não foi possível carregar os clientes.'))
+      .finally(() => setIsLoadingClients(false))
   }
 
   function fetchSummary() {
@@ -77,6 +95,24 @@ export function ContractsPage() {
     void fetchContracts()
     void fetchSummary()
   }, [])
+
+  useEffect(() => {
+    if (!clientRouteId) return
+
+    getClient(clientRouteId)
+      .then((client) => {
+        setRouteClient(client)
+        setClientRouteError('')
+      })
+      .catch(async (error) => {
+        setClientRouteError(
+          error instanceof Error && 'status' in error && error.status === 404
+            ? 'Cliente não encontrado. A lista foi atualizada.'
+            : 'Não foi possível carregar o cliente.',
+        )
+        await fetchClients()
+      })
+  }, [clientRouteId])
 
   useEffect(() => {
     const contractId = editContractId ?? deleteContractId
@@ -112,24 +148,26 @@ export function ContractsPage() {
       </header>
 
       <section className="content-section" aria-labelledby="clients-title">
-        <h2 id="clients-title">Clientes</h2>
-        <div className="clients-layout">
-          <div>
-            <h3>Novo cliente</h3>
-            <ClientForm
-              onClientCreated={(client) =>
-                setClients((current) => [...current, client])
-              }
-            />
-          </div>
-          <div>
-            <h3>Clientes cadastrados</h3>
+        <div className="section-header">
+          <h2 id="clients-title">Clientes</h2>
+          <button type="button" onClick={() => navigate('/clients/add')}>
+            Novo cliente
+          </button>
+        </div>
+        <div>
             <ClientList
               clients={clients}
               isLoading={isLoadingClients}
               errorMessage={clientsError}
+              onEdit={(client) => navigate(`/clients/${client.id}/edit`)}
+              onDelete={(client) => navigate(`/clients/${client.id}/delete`)}
             />
-          </div>
+            {clientRouteError && (
+              <p className="form-message error" role="alert">{clientRouteError}</p>
+            )}
+            {clientActionMessage && (
+              <p className="form-message success" role="status">{clientActionMessage}</p>
+            )}
         </div>
       </section>
 
@@ -194,6 +232,15 @@ export function ContractsPage() {
           onClose={() => navigate('/contracts')}
         />
       )}
+      {createClientRoute && (
+        <CreateClientModal
+          onCreated={(client) => {
+            setClients((current) => [...current, client])
+            setClientActionMessage('Cliente cadastrado com sucesso.')
+          }}
+          onClose={() => navigate('/contracts')}
+        />
+      )}
       {editContractId && routeContract?.id === editContractId && (
         <EditContractModal
           clients={clients}
@@ -206,6 +253,29 @@ export function ContractsPage() {
         <DeleteContractModal
           contract={routeContract}
           onDeleted={loadContractsAndSummary}
+          onClose={() => navigate('/contracts')}
+        />
+      )}
+      {editClientRoute && routeClient && routeClient.id === clientRouteId && (
+        <EditClientModal
+          client={routeClient}
+          onUpdated={(updated) => {
+            setClients((current) => current.map((client) => client.id === updated.id ? updated : client))
+            setRouteClient(updated)
+            setClientActionMessage('Cliente atualizado com sucesso.')
+          }}
+          onNotFound={fetchClients}
+          onClose={() => navigate('/contracts')}
+        />
+      )}
+      {deleteClientRoute && routeClient && routeClient.id === clientRouteId && (
+        <DeleteClientModal
+          client={routeClient}
+          onDeleted={(id) => {
+            setClients((current) => current.filter((client) => client.id !== id))
+            setClientActionMessage('Cliente excluído com sucesso.')
+          }}
+          onNotFound={fetchClients}
           onClose={() => navigate('/contracts')}
         />
       )}

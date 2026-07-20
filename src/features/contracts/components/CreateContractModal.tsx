@@ -1,6 +1,6 @@
 import type { Client } from '../../clients/types/client'
 import { ContractForm } from './ContractForm'
-import { ContractModal } from './ContractModal'
+import { Modal } from '../../../components/Modal'
 
 interface CreateContractModalProps {
   clients: Client[]
@@ -14,7 +14,7 @@ export function CreateContractModal({
   onCreated,
 }: CreateContractModalProps) {
   return (
-    <ContractModal title="Novo contrato" onClose={onClose}>
+    <Modal title="Novo contrato" onClose={onClose}>
       <ContractForm
         mode="create"
         clients={clients}
@@ -24,6 +24,6 @@ export function CreateContractModal({
         }}
         onCancel={onClose}
       />
-    </ContractModal>
+    </Modal>
   )
 }
