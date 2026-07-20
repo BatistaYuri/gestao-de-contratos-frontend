@@ -33,9 +33,9 @@ export function ClientList({ clients, isLoading, errorMessage, onEdit, onDelete 
         <tbody>
           {clients.map((client) => (
             <tr key={client.id}>
-              <td>{client.name}</td>
-              <td>{client.document}</td>
-              <td className="actions-column">
+              <td data-label="Nome">{client.name}</td>
+              <td data-label="Documento">{client.document}</td>
+              <td className="actions-column" data-label="Ações">
                 <ActionMenu label={`Abrir ações do cliente ${client.name}`}>
                     <button type="button" onClick={() => onEdit(client)}>Editar</button>
                     <button type="button" className="danger-menu-item" onClick={() => onDelete(client)}>Excluir</button>
