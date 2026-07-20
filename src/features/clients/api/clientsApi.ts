@@ -1,8 +1,23 @@
 import { apiRequest } from '../../../lib/api-client'
 import type { Client, CreateClientInput, UpdateClientInput } from '../types/client'
+import type { PaginatedResponse, PaginationQuery } from '../../../types/pagination'
 
-export async function getClients() {
-  return (await apiRequest<Client[]>('/clients')) ?? []
+export async function getClients({ page, pageSize }: PaginationQuery) {
+  return apiRequest<PaginatedResponse<Client>>(`/clients?page=${page}&pageSize=${pageSize}`)
+}
+
+export async function getAllClients() {
+  const firstPage = await getClients({ page: 1, pageSize: 100 })
+  if (!firstPage) return []
+  if (firstPage.pagination.totalPages <= 1) return firstPage.data
+
+  const remainingPages = await Promise.all(
+    Array.from({ length: firstPage.pagination.totalPages - 1 }, (_, index) =>
+      getClients({ page: index + 2, pageSize: 100 }),
+    ),
+  )
+  return [firstPage, ...remainingPages]
+    .flatMap((response) => response?.data ?? [])
 }
 
 export async function createClient(input: CreateClientInput) {

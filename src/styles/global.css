@@ -167,6 +167,10 @@ td { font-size: .875rem; }
 .action-menu-popover .danger-menu-item { color: #bf000f; }
 .action-menu-popover .danger-menu-item:hover:not(:disabled) { color: #bf000f; background: #fff0ed; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; margin: -1px; padding: 0; border: 0; white-space: nowrap; clip: rect(0, 0, 0, 0); clip-path: inset(50%); }
+.pagination { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1rem; }
+.pagination p { margin: 0; color: var(--muted); font-size: .8rem; }
+.pagination > div { display: flex; gap: .5rem; }
+.pagination button { min-height: 2.2rem; padding: .45rem .75rem; font-size: .78rem; }
 
 .auth-page { display: grid; grid-template-columns: minmax(20rem, .95fr) minmax(22rem, 1.05fr); min-height: 100vh; background: #fff; }
 .auth-intro { position: relative; display: flex; overflow: hidden; flex-direction: column; justify-content: center; padding: clamp(2rem, 7vw, 7rem); color: #fff; background: linear-gradient(145deg, #f2673c, #f28531); }
@@ -222,6 +226,9 @@ td { font-size: .875rem; }
   .modal-card { max-height: calc(100dvh - 1rem); padding: 1rem; border-radius: .75rem; }
   .modal-header { align-items: flex-start; margin-bottom: 1rem; }
   .modal-actions { flex-wrap: wrap; }
+  .pagination { align-items: stretch; flex-direction: column; }
+  .pagination > div { display: grid; grid-template-columns: 1fr 1fr; }
+  .pagination button { width: 100%; }
 }
 
 @media (max-width: 28rem) {

@@ -51,10 +51,23 @@ Returns `201 Created`.
 ### List clients
 
 ```http
-GET /api/clients
+GET /api/clients?page=1&pageSize=20
 ```
 
-Returns `200 OK` with a client array.
+`page` starts at 1. `pageSize` defaults to 20 and accepts at most 100.
+Returns `200 OK` with `data` and `pagination`:
+
+```json
+{
+  "data": [],
+  "pagination": {
+    "page": 1,
+    "pageSize": 20,
+    "total": 45,
+    "totalPages": 3
+  }
+}
+```
 
 ### Get client
 
@@ -132,7 +145,7 @@ Uses the contract write payload. Returns `201 Created`.
 ### List contracts
 
 ```http
-GET /api/contracts
+GET /api/contracts?status=ACTIVE&page=1&pageSize=20
 ```
 
 Optional, combinable query parameters:
@@ -141,8 +154,12 @@ Optional, combinable query parameters:
 - `type`
 - `approvalStatus`
 - `clientId`
+- `page` (starts at 1; defaults to 1)
+- `pageSize` (defaults to 20; maximum 100)
 
-Returns `200 OK` with contracts, clients, items, and calculated totals.
+Returns `200 OK` with contracts in `data` and the same `pagination` metadata
+documented for the client list. Contract records include clients, items, and
+calculated totals.
 
 ### Contract summary
 
