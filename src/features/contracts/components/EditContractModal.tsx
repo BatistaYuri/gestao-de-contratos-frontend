@@ -17,7 +17,7 @@ export function EditContractModal({
   onUpdated,
 }: EditContractModalProps) {
   return (
-    <Modal title="Editar contrato" onClose={onClose}>
+    <Modal title={['DRAFT', 'REJECTED'].includes(contract.approvalStatus) ? 'Editar contrato' : 'Detalhes do contrato'} onClose={onClose}>
       <ContractForm
         mode="edit"
         clients={clients}

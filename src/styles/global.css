@@ -147,11 +147,54 @@ h1 {
 
 .contract-form > button,
 .contract-form > .form-actions,
+.contract-form-wide,
+.contract-items,
+.financial-summary,
 .client-form > .form-actions {
   align-self: end;
   grid-column: 1 / -1;
   justify-content: flex-end;
 }
+
+.contract-items {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid #dce1e8;
+  border-radius: 0.5rem;
+}
+
+.contract-item {
+  display: grid;
+  grid-template-columns: minmax(12rem, 2fr) repeat(3, minmax(7rem, 1fr)) auto;
+  align-items: start;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #dce1e8;
+}
+
+.contract-item output { padding: 0.65rem 0; font-weight: 600; }
+.remove-item { align-self: end; }
+.add-item { justify-self: start; }
+.field-error { color: #9b2c2c; }
+[aria-invalid="true"] { border-color: #9b2c2c !important; }
+
+.financial-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+}
+
+.financial-summary dt { color: #52606d; font-size: 0.875rem; }
+.financial-summary dd { margin: 0.25rem 0 0; font-weight: 600; }
+.financial-total dd { font-size: 1.25rem; }
+.contract-items-summary { margin-top: 0.5rem; min-width: 12rem; }
+.contract-items-summary ul { margin: 0.5rem 0 0; padding-left: 1.25rem; }
 
 .form-actions,
 .table-actions {
@@ -374,6 +417,11 @@ th {
   }
 
   .contract-form {
+    grid-template-columns: 1fr;
+  }
+
+  .contract-item,
+  .financial-summary {
     grid-template-columns: 1fr;
   }
 
