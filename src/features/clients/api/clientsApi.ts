@@ -1,9 +1,11 @@
 import { apiRequest } from '../../../lib/api-client'
 import type { Client, CreateClientInput, UpdateClientInput } from '../types/client'
-import type { PaginatedResponse, PaginationQuery } from '../../../types/pagination'
+import { normalizePaginatedResponse, type PaginationQuery } from '../../../types/pagination'
 
 export async function getClients({ page, pageSize }: PaginationQuery) {
-  return apiRequest<PaginatedResponse<Client>>(`/clients?page=${page}&pageSize=${pageSize}`)
+  const query = { page, pageSize }
+  const response = await apiRequest<unknown>(`/clients?page=${page}&pageSize=${pageSize}`)
+  return response === undefined ? undefined : normalizePaginatedResponse<Client>(response, query)
 }
 
 export async function getAllClients() {

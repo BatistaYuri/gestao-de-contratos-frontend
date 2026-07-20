@@ -172,14 +172,8 @@ td { font-size: .875rem; }
 .pagination > div { display: flex; gap: .5rem; }
 .pagination button { min-height: 2.2rem; padding: .45rem .75rem; font-size: .78rem; }
 
-.auth-page { display: grid; grid-template-columns: minmax(20rem, .95fr) minmax(22rem, 1.05fr); min-height: 100vh; background: #fff; }
-.auth-intro { position: relative; display: flex; overflow: hidden; flex-direction: column; justify-content: center; padding: clamp(2rem, 7vw, 7rem); color: #fff; background: linear-gradient(145deg, #f2673c, #f28531); }
-.auth-intro::after { position: absolute; right: -10rem; bottom: -12rem; width: 28rem; height: 28rem; border: 1px solid rgb(255 255 255 / 28%); border-radius: 50%; box-shadow: 0 0 0 5rem rgb(255 255 255 / 5%), 0 0 0 10rem rgb(255 255 255 / 3%); content: ""; }
-.auth-intro .brand-lockup { position: absolute; top: 2.5rem; left: clamp(2rem, 7vw, 7rem); }
-.auth-intro .eyebrow { margin-top: 3rem; color: #fff; }
-.auth-intro h1 { max-width: 38rem; color: #fff; font-size: clamp(2.2rem, 4.2vw, 4rem); }
-.auth-intro > p:last-child { max-width: 34rem; color: rgb(255 255 255 / 85%); font-size: 1.05rem; line-height: 1.7; }
-.auth-card { align-self: center; width: min(27rem, calc(100% - 3rem)); margin: 3rem auto; padding: 2.25rem; border: 1px solid var(--line); border-radius: 1rem; background: #fff; box-shadow: var(--shadow); }
+.auth-page { display: grid; min-height: 100vh; padding: 1.5rem; background: var(--soft); place-items: center; }
+.auth-card { width: min(27rem, 100%); padding: 2.25rem; border: 1px solid var(--line); border-radius: 1rem; background: #fff; box-shadow: var(--shadow); }
 .auth-card h2 { margin: 0; font-size: 1.75rem; }
 .auth-card > p:not(.eyebrow) { color: var(--muted); line-height: 1.5; }
 .login-form { display: grid; gap: .7rem; margin-top: 1.5rem; }
@@ -187,13 +181,7 @@ td { font-size: .875rem; }
 .form-error { margin: 0; }
 
 @media (max-width: 60rem) {
-  .auth-page { grid-template-columns: 1fr; background: var(--soft); }
-  .auth-intro { min-height: 18rem; padding: 6rem 2rem 2.5rem; }
-  .auth-intro .brand-lockup { top: 1.5rem; left: 2rem; }
-  .auth-intro .eyebrow { margin-top: 0; }
-  .auth-intro h1 { max-width: 42rem; font-size: clamp(2rem, 6vw, 3rem); }
-  .auth-intro > p:last-child { display: none; }
-  .auth-card { margin: -1.25rem auto 2rem; z-index: 1; }
+  .auth-page { padding: 1rem; }
 }
 
 @media (max-width: 45rem) {

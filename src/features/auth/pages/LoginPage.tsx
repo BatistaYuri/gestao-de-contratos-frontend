@@ -11,18 +11,8 @@ export function LoginPage() {
 
   return (
     <main className="auth-page">
-      <section className="auth-intro" aria-label="WebMais">
-        <div className="brand-lockup brand-lockup-light">
-          <img src="https://webmaissistemas.com.br/assets/images/logos/logo-webmais-positive.svg" alt="WebMais Sistemas" />
-        </div>
-        <p className="eyebrow">Gestão simples e eficiente</p>
-        <h1>Seus contratos organizados. Suas decisões mais rápidas.</h1>
-        <p>Centralize informações, acompanhe prazos e mantenha a operação sob controle.</p>
-      </section>
       <section className="auth-card" aria-labelledby="login-title">
-        <p className="eyebrow">Área segura</p>
-        <h2 id="login-title">Bem-vindo de volta</h2>
-        <p>Entre com suas credenciais para acessar a gestão de contratos.</p>
+        <h2 id="login-title">Bem-vindo à Gestão de Contratos da WebMais</h2>
         <LoginForm />
       </section>
     </main>
