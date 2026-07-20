@@ -128,12 +128,18 @@ export function ContractsPage() {
   }, [searchParams])
 
   function applyFilters(nextFilters: ContractFiltersData) {
-    setIsLoadingContracts(true)
-    setContractsError('')
     const params = new URLSearchParams()
     Object.entries(nextFilters).forEach(([key, value]) => {
       if (value) params.set(key, value)
     })
+
+    if (params.toString() === filterSearch) {
+      void fetchContracts(nextFilters)
+      return
+    }
+
+    setIsLoadingContracts(true)
+    setContractsError('')
     setSearchParams(params)
   }
 
@@ -182,7 +188,12 @@ export function ContractsPage() {
   return (
     <main className="app-shell">
       <header className="app-header">
-        <h1>Gestão de Contratos</h1>
+        <div className="brand-lockup">
+          <img src="https://webmaissistemas.com.br/assets/images/logos/logo-webmais-positive.svg" alt="WebMais Sistemas" />
+          <div>
+            <p>Gestão de Contratos</p>
+          </div>
+        </div>
         <button type="button" className="secondary-button" onClick={logout}>
           Sair
         </button>
