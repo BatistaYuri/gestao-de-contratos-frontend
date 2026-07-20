@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL ?? '/api'
+
 
 let getAccessToken: () => string | null = () => null
 let handleUnauthorized: () => void = () => undefined
@@ -44,7 +44,7 @@ export async function apiRequest<T>(
   }
 
   try {
-    const response = await fetch(`${API_URL}${path}`, { ...options, headers })
+    const response = await fetch(`/api${path}`, { ...options, headers })
 
     if (!response.ok) {
       if (response.status === 401) {
