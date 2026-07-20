@@ -7,14 +7,16 @@ import type {
   CreateContractInput,
   UpdateContractInput,
 } from '../types/contract'
+import type { PaginatedResponse, PaginationQuery } from '../../../types/pagination'
 
-export async function getContracts(filters: ContractFilters = {}) {
+export async function getContracts(filters: ContractFilters = {}, pagination: PaginationQuery = { page: 1, pageSize: 20 }) {
   const params = new URLSearchParams()
   Object.entries(filters).forEach(([key, value]) => {
     if (value) params.set(key, value)
   })
-  const query = params.size ? `?${params.toString()}` : ''
-  return (await apiRequest<Contract[]>(`/contracts${query}`)) ?? []
+  params.set('page', String(pagination.page))
+  params.set('pageSize', String(pagination.pageSize))
+  return apiRequest<PaginatedResponse<Contract>>(`/contracts?${params.toString()}`)
 }
 
 export async function getContractSummary(filters: ContractFilters = {}) {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useMatch, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../auth/context/useAuth'
-import { getClient, getClients } from '../../clients/api/clientsApi'
+import { getAllClients, getClient, getClients } from '../../clients/api/clientsApi'
 import { CreateClientModal } from '../../clients/components/CreateClientModal'
 import { DeleteClientModal } from '../../clients/components/DeleteClientModal'
 import { EditClientModal } from '../../clients/components/EditClientModal'
@@ -25,6 +25,16 @@ import type {
   ContractFilters as ContractFiltersData,
   ContractSummary as ContractSummaryData,
 } from '../types/contract'
+import { Pagination } from '../../../components/Pagination'
+import type { PaginationMeta } from '../../../types/pagination'
+
+const PAGE_SIZE = 10
+const initialPagination: PaginationMeta = {
+  page: 1,
+  pageSize: PAGE_SIZE,
+  total: 0,
+  totalPages: 0,
+}
 
 export function ContractsPage() {
   const { logout } = useAuth()
@@ -40,12 +50,17 @@ export function ContractsPage() {
   const deleteContractId = deleteRoute?.params.id
   const clientRouteId = editClientRoute?.params.id ?? deleteClientRoute?.params.id
   const [clients, setClients] = useState<Client[]>([])
+  const [listedClients, setListedClients] = useState<Client[]>([])
+  const [clientsPage, setClientsPage] = useState(1)
+  const [clientsPagination, setClientsPagination] = useState(initialPagination)
   const [isLoadingClients, setIsLoadingClients] = useState(true)
   const [clientsError, setClientsError] = useState('')
   const [routeClient, setRouteClient] = useState<Client | null>(null)
   const [clientRouteError, setClientRouteError] = useState('')
   const [clientActionMessage, setClientActionMessage] = useState('')
   const [contracts, setContracts] = useState<Contract[]>([])
+  const [contractsPage, setContractsPage] = useState(1)
+  const [contractsPagination, setContractsPagination] = useState(initialPagination)
   const [isLoadingContracts, setIsLoadingContracts] = useState(true)
   const [contractsError, setContractsError] = useState('')
   const [summary, setSummary] = useState<ContractSummaryData | null>(null)
@@ -69,22 +84,36 @@ export function ContractsPage() {
   const listLocation = { pathname: '/contracts', search: filterSearch }
   const withFilters = (pathname: string) => ({ pathname, search: filterSearch })
 
-  function fetchContracts(activeFilters = filters) {
+  function fetchContracts(activeFilters = filters, page = contractsPage) {
     setIsLoadingContracts(true)
     setContractsError('')
-    return getContracts(activeFilters)
-      .then(setContracts)
+    return getContracts(activeFilters, { page, pageSize: PAGE_SIZE })
+      .then((response) => {
+        if (!response) return
+        setContracts(response.data)
+        setContractsPagination(response.pagination)
+        if (page > Math.max(1, response.pagination.totalPages)) {
+          setContractsPage(Math.max(1, response.pagination.totalPages))
+        }
+      })
       .catch(() =>
         setContractsError('Não foi possível carregar os contratos.'),
       )
       .finally(() => setIsLoadingContracts(false))
   }
 
-  function fetchClients() {
+  function fetchClients(page = clientsPage) {
     setIsLoadingClients(true)
     setClientsError('')
-    return getClients()
-      .then(setClients)
+    return getClients({ page, pageSize: PAGE_SIZE })
+      .then((response) => {
+        if (!response) return
+        setListedClients(response.data)
+        setClientsPagination(response.pagination)
+        if (page > Math.max(1, response.pagination.totalPages)) {
+          setClientsPage(Math.max(1, response.pagination.totalPages))
+        }
+      })
       .catch(() => setClientsError('Não foi possível carregar os clientes.'))
       .finally(() => setIsLoadingClients(false))
   }
@@ -107,13 +136,29 @@ export function ContractsPage() {
     await Promise.all([fetchContracts(activeFilters), fetchSummary(activeFilters)])
   }
 
+  async function refreshClients() {
+    await Promise.all([
+      fetchClients(),
+      getAllClients().then(setClients),
+    ])
+  }
+
   useEffect(() => {
-    getClients()
+    getAllClients()
       .then(setClients)
       .catch(() => setClientsError('Não foi possível carregar os clientes.'))
-      .finally(() => setIsLoadingClients(false))
-
   }, [])
+
+  useEffect(() => {
+    getClients({ page: clientsPage, pageSize: PAGE_SIZE })
+      .then((response) => {
+        if (!response) return
+        setListedClients(response.data)
+        setClientsPagination(response.pagination)
+      })
+      .catch(() => setClientsError('Não foi possível carregar os clientes.'))
+      .finally(() => setIsLoadingClients(false))
+  }, [clientsPage])
 
   useEffect(() => {
     const activeFilters: ContractFiltersData = {
@@ -123,8 +168,12 @@ export function ContractsPage() {
       clientId: searchParams.get('clientId') || undefined,
     }
     void Promise.all([
-      getContracts(activeFilters)
-        .then(setContracts)
+      getContracts(activeFilters, { page: contractsPage, pageSize: PAGE_SIZE })
+        .then((response) => {
+          if (!response) return
+          setContracts(response.data)
+          setContractsPagination(response.pagination)
+        })
         .catch(() => setContractsError('Não foi possível carregar os contratos.'))
         .finally(() => setIsLoadingContracts(false)),
       getContractSummary(activeFilters)
@@ -132,7 +181,7 @@ export function ContractsPage() {
         .catch(() => setSummaryError('Não foi possível carregar o resumo.'))
         .finally(() => setIsLoadingSummary(false)),
     ])
-  }, [searchParams])
+  }, [searchParams, contractsPage])
 
   function applyFilters(nextFilters: ContractFiltersData) {
     const params = new URLSearchParams()
@@ -141,7 +190,11 @@ export function ContractsPage() {
     })
 
     if (params.toString() === filterSearch) {
-      void loadContractsAndSummary(nextFilters)
+      if (contractsPage === 1) void loadContractsAndSummary(nextFilters)
+      else {
+        setIsLoadingContracts(true)
+        setContractsPage(1)
+      }
       return
     }
 
@@ -149,6 +202,7 @@ export function ContractsPage() {
     setIsLoadingSummary(true)
     setContractsError('')
     setSummaryError('')
+    setContractsPage(1)
     setSearchParams(params)
   }
 
@@ -166,7 +220,12 @@ export function ContractsPage() {
             ? 'Cliente não encontrado. A lista foi atualizada.'
             : 'Não foi possível carregar o cliente.',
         )
-        await fetchClients()
+        const response = await getClients({ page: 1, pageSize: PAGE_SIZE })
+        if (response) {
+          setListedClients(response.data)
+          setClientsPagination(response.pagination)
+          setClientsPage(1)
+        }
       })
   }, [clientRouteId])
 
@@ -217,11 +276,19 @@ export function ContractsPage() {
         </div>
         <div>
             <ClientList
-              clients={clients}
+              clients={listedClients}
               isLoading={isLoadingClients}
               errorMessage={clientsError}
               onEdit={(client) => navigate(`/clients/${client.id}/edit`)}
               onDelete={(client) => navigate(`/clients/${client.id}/delete`)}
+            />
+            <Pagination
+              pagination={clientsPagination}
+              onPageChange={(page) => {
+                setIsLoadingClients(true)
+                setClientsPage(page)
+              }}
+              disabled={isLoadingClients}
             />
             {clientRouteError && (
               <p className="form-message error" role="alert">{clientRouteError}</p>
@@ -285,6 +352,14 @@ export function ContractsPage() {
               onReject={setRejectingContract}
               onChanged={loadContractsAndSummary}
             />
+            <Pagination
+              pagination={contractsPagination}
+              onPageChange={(page) => {
+                setIsLoadingContracts(true)
+                setContractsPage(page)
+              }}
+              disabled={isLoadingContracts}
+            />
           </div>
         </div>
       </section>
@@ -297,8 +372,8 @@ export function ContractsPage() {
       )}
       {createClientRoute && (
         <CreateClientModal
-          onCreated={(client) => {
-            setClients((current) => [...current, client])
+          onCreated={async () => {
+            await refreshClients()
             setClientActionMessage('Cliente cadastrado com sucesso.')
           }}
           onClose={() => navigate(listLocation)}
@@ -322,23 +397,23 @@ export function ContractsPage() {
       {editClientRoute && routeClient && routeClient.id === clientRouteId && (
         <EditClientModal
           client={routeClient}
-          onUpdated={(updated) => {
-            setClients((current) => current.map((client) => client.id === updated.id ? updated : client))
+          onUpdated={async (updated) => {
             setRouteClient(updated)
+            await refreshClients()
             setClientActionMessage('Cliente atualizado com sucesso.')
           }}
-          onNotFound={fetchClients}
+          onNotFound={refreshClients}
           onClose={() => navigate(listLocation)}
         />
       )}
       {deleteClientRoute && routeClient && routeClient.id === clientRouteId && (
         <DeleteClientModal
           client={routeClient}
-          onDeleted={(id) => {
-            setClients((current) => current.filter((client) => client.id !== id))
+          onDeleted={async () => {
+            await refreshClients()
             setClientActionMessage('Cliente excluído com sucesso.')
           }}
-          onNotFound={fetchClients}
+          onNotFound={refreshClients}
           onClose={() => navigate(listLocation)}
         />
       )}
