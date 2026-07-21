@@ -2,6 +2,7 @@
 
 let getAccessToken: () => string | null = () => null
 let handleUnauthorized: () => void = () => undefined
+const apiBaseUrl = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
 
 export function configureApiAuth(config: {
   getToken: () => string | null
@@ -44,7 +45,10 @@ export async function apiRequest<T>(
   }
 
   try {
-    const response = await fetch(`/api${path}`, { ...options, headers })
+    const response = await fetch(`${apiBaseUrl}/api${path}`, {
+      ...options,
+      headers,
+    })
 
     if (!response.ok) {
       if (response.status === 401) {
