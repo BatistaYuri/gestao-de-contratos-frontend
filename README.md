@@ -35,6 +35,14 @@ npm run dev
 http://localhost:5173
 ```
 
+## Deploy na Railway
+
+O frontend publicado está disponível em:
+
+```text
+https://frontend-production-7aa6.up.railway.app
+```
+
 ## Uso de Inteligência Artificial
 
 Durante o desenvolvimento deste projeto, utilizei o **Codex** como ferramenta de apoio em diferentes níveis ao longo do trabalho.
